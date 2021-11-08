@@ -14,6 +14,7 @@ import datetime
 import json
 
 from pyglet.window import key
+from pyglet.gl import glClearColor
 from datetime import datetime
 
 FILE_CONFIG = "config.json"
@@ -27,24 +28,44 @@ LOGGING_TIME_FORMAT = "%H:%M:%S"
 default_logging_level = logging.DEBUG
 LOG_NAME = "driver"
 start_time = datetime.now()
+WIDTH = 1280
+HEIGHT = 720
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
-window = pyglet.window.Window()
+window = pyglet.window.Window(WIDTH, HEIGHT, "hexsweeper", resizable=True)
+event_loop = pyglet.app.EventLoop()
 config = {"log_dir": "logs/", "log_ext": ".txt"}
+draw = []
+sprite = None
 
 
 def main():
     initialize_log()
+    load_config()
+    initialize()
+    batch = pyglet.graphics.Batch()
+    hex_image = pyglet.image.load("resources/hex.png")
+    center_image(hex_image)
+    hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=400, y=300)
+    global sprite
+    sprite = hex_sprite
+    glClearColor(255, 255, 255, 1.0)
+    draw.append(hex_sprite)
     pyglet.app.run()
-    finalize_log()
+
+
+def initialize():
+    LOG.debug("Initializing")
+    pyglet.options["vsync"] = True
 
 
 def initialize_log():
     global start_time
-    header_timestamp = start_time.strftime("%Y-%m-%d %H:%M:%S")
     file_name = f"{config['log_dir']}{start_time.strftime('%Y_%m_%d_%H_%M_%S')}{config['log_ext']}"
-    logging.basicConfig(filename=file_name, level=default_logging_level, format=LOGGING_FORMAT, datefmt=LOGGING_TIME_FORMAT)
+    logging.basicConfig(filename=file_name, level=default_logging_level, format=LOGGING_FORMAT,
+                        datefmt=LOGGING_TIME_FORMAT)
+
 
 def finalize_log():
     """
@@ -59,6 +80,7 @@ def finalize_log():
     elapsed = now - then
     LOG.info(f"Process complete ({str(elapsed)} elapsed)")
 
+
 def load_config():
     """
     Loads config options from the config file
@@ -67,15 +89,19 @@ def load_config():
     LOG.debug(f"Attempting to load {FILE_CONFIG!r}")
     with open(FILE_CONFIG, "r") as json_file:
         data = json.load(json_file)
-    for key in data.keys():
-        config[key] = data[key]
-        LOG.debug(f"Loaded config field {key!r} with value {data[key]!r}")
+    for data_key in data.keys():
+        config[data_key] = data[data_key]
+        LOG.debug(f"Loaded config field {data_key!r} with value {data[data_key]!r}")
     LOG.debug(f"{FILE_CONFIG!r} loaded, {len(data)} config options loaded")
 
 
 @window.event
 def on_draw():
     window.clear()
+    #global sprite
+    #sprite.draw()
+    for drawable in draw:
+        drawable.draw()
 
 
 @window.event
@@ -86,6 +112,21 @@ def on_key_press(symbol, modifiers):
         print('The left arrow key was pressed.')
     elif symbol == key.ENTER:
         print('The enter key was pressed.')
+
+
+@window.event
+def on_close():
+    LOG.debug("Window close detected")
+    finalize_log()
+
+
+def center_image(image):
+    """
+    Sets an image's anchor point to its center
+    """
+    image.anchor_x = image.width // 2
+    image.anchor_y = image.height // 2
+
 
 if __name__ == "__main__":
     main()
