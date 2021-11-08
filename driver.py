@@ -37,7 +37,6 @@ window = pyglet.window.Window(WIDTH, HEIGHT, "hexsweeper", resizable=True)
 event_loop = pyglet.app.EventLoop()
 config = {"log_dir": "logs/", "log_ext": ".txt"}
 draw = []
-sprite = None
 
 
 def main():
@@ -47,10 +46,11 @@ def main():
     batch = pyglet.graphics.Batch()
     hex_image = pyglet.image.load("resources/hex.png")
     center_image(hex_image)
-    hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=400, y=300)
-    global sprite
-    sprite = hex_sprite
+    hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=WIDTH / 2, y=HEIGHT / 2)
+
+    # Set background to white
     glClearColor(255, 255, 255, 1.0)
+
     draw.append(hex_sprite)
     pyglet.app.run()
 
@@ -98,8 +98,6 @@ def load_config():
 @window.event
 def on_draw():
     window.clear()
-    #global sprite
-    #sprite.draw()
     for drawable in draw:
         drawable.draw()
 
