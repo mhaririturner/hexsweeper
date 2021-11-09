@@ -12,10 +12,12 @@ import logging
 import os
 import datetime
 import json
+import math
 
 from pyglet.window import key
 from pyglet.gl import glClearColor
 from datetime import datetime
+from hex_cell import HexCell
 
 FILE_CONFIG = "config.json"
 
@@ -30,6 +32,7 @@ LOG_NAME = "driver"
 start_time = datetime.now()
 WIDTH = 1280
 HEIGHT = 720
+HEX_SCALE = 0.1
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
@@ -37,22 +40,35 @@ window = pyglet.window.Window(WIDTH, HEIGHT, "hexsweeper", resizable=True)
 event_loop = pyglet.app.EventLoop()
 config = {"log_dir": "logs/", "log_ext": ".txt"}
 draw = []
+grid = []
 
 
 def main():
     initialize_log()
     load_config()
     initialize()
-    batch = pyglet.graphics.Batch()
+    generate_hexagonal_grid(3)
     hex_image = pyglet.image.load("resources/hex.png")
     center_image(hex_image)
     hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=WIDTH / 2, y=HEIGHT / 2)
+    hex_sprite.update(scale=HEX_SCALE)
+    window.set_icon(hex_image)
 
     # Set background to white
     glClearColor(255, 255, 255, 1.0)
 
     draw.append(hex_sprite)
     pyglet.app.run()
+
+
+def generate_hexagonal_grid(radius):
+    for h in range(-radius, radius+1):
+        for k in range(-radius, radius+1):
+            if h * k > 0 and abs(h + k) > radius:
+                LOG.debug(f"Skipped cell at ({h}, {k})")
+            else:
+                grid.append(HexCell(h, k))
+                LOG.debug(f"Generating cell at ({h}, {k})")
 
 
 def initialize():
@@ -100,6 +116,15 @@ def on_draw():
     window.clear()
     for drawable in draw:
         drawable.draw()
+    hex_image = pyglet.image.load("resources/hex.png")
+    center_image(hex_image)
+    for hex in grid:
+        hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=WIDTH / 2, y=HEIGHT / 2)
+        if hex_image.width != hex_image.height:
+            LOG.warning("Hex sprite height and width are not equal, this should never be the case")
+        diameter = hex_image.width * HEX_SCALE
+        hex_sprite.update(scale=HEX_SCALE, x=WIDTH / 2 + hex.get_x(diameter), y=HEIGHT / 2 + hex.get_y(diameter))
+        hex_sprite.draw()
 
 
 @window.event
@@ -110,6 +135,10 @@ def on_key_press(symbol, modifiers):
         print('The left arrow key was pressed.')
     elif symbol == key.ENTER:
         print('The enter key was pressed.')
+    elif symbol == key.R:
+        print("bruh")
+        window.invalid = True
+
 
 
 @window.event
