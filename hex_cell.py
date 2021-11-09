@@ -25,18 +25,22 @@ HEX_CLEAR.anchor_y = HEX_CLEAR.height // 2
 HEX_BLOWN = pyglet.image.load("resources/hex_blown.png")
 HEX_BLOWN.anchor_x = HEX_BLOWN.width // 2
 HEX_BLOWN.anchor_y = HEX_BLOWN.height // 2
+HEX_FLAGGED = pyglet.image.load("resources/hex_flagged.png")
+HEX_FLAGGED.anchor_x = HEX_FLAGGED.width // 2
+HEX_FLAGGED.anchor_y = HEX_FLAGGED.height // 2
 SANS_SERIF = pyglet.font.load(None, 16)
 FONT_SIZE = 16
 
 # Instance variables
-h = 0
-k = 0
+h = None
+k = None
 sprite = None
 label = None
 is_mine = None
 is_live = None
+flagged = None
 list_neighbors = None
-mine_neighbors = 0
+neighbor_number = None
 
 
 def generate_neighbor_numbers(grid):
@@ -52,7 +56,8 @@ class HexCell(object):
         self.label = None
         self.is_mine = False
         self.is_live = True
-        self.mine_neighbors = 0
+        self.flagged = False
+        self.neighbor_number = 0
         self.list_neighbors = []
 
     def get_h(self):
@@ -82,16 +87,23 @@ class HexCell(object):
     def get_label(self):
         if self.is_mine:
             return None
-        if self.mine_neighbors > 0 and (not self.is_live):
+        if self.neighbor_number > 0 and (not self.is_live):
             return self.label
 
     def hover(self):
-        image = HEX_HOVER
-        self.sprite.image = image
+        if not self.flagged:
+            self.sprite.image = HEX_HOVER
+
+    def toggle_flag(self):
+        if not self.flagged:
+            self.sprite.image = HEX_FLAGGED
+        else:
+            self.sprite.image = HEX_IMAGE
+        self.flagged = not self.flagged
 
     def unhover(self):
-        image = HEX_IMAGE
-        self.sprite.image = image
+        if not self.flagged:
+            self.sprite.image = HEX_IMAGE
 
     def get_mine(self):
         return self.is_mine
@@ -99,20 +111,21 @@ class HexCell(object):
     def set_mine(self):
         self.is_mine = True
 
+    def get_neighbor_number(self):
+        return self.neighbor_number
+
     def mine(self):
+        if self.flagged:
+            return
         self.is_live = False
         if not self.is_mine:
-            image = HEX_CLEAR
-            self.sprite.image = image
-            if self.mine_neighbors == 0:
-                print("Cascading")
-                print(len(self.list_neighbors))
+            self.sprite.image = HEX_CLEAR
+            if self.neighbor_number == 0:
                 for cell in self.list_neighbors:
                     if cell.alive():
                         cell.mine()
         else:
-            image = HEX_BLOWN
-            self.sprite.image = image
+            self.sprite.image = HEX_BLOWN
         return self.is_mine
 
     def assess_neighbors(self, grid):
@@ -125,10 +138,10 @@ class HexCell(object):
                             self.list_neighbors.append(cell)
                             if cell.get_mine():
                                 neighbors += 1
-        self.mine_neighbors = neighbors
+        self.neighbor_number = neighbors
 
     def make_label(self, diameter, window_width, window_height):
-        self.label = pyglet.text.Label(str(self.mine_neighbors), font_name=SANS_SERIF, font_size=FONT_SIZE,
+        self.label = pyglet.text.Label(str(self.neighbor_number), font_name=SANS_SERIF, font_size=FONT_SIZE,
                                        x=window_width / 2 + self.get_x(diameter),
                                        y=window_height / 2 + self.get_y(diameter),
                                        anchor_x='center', anchor_y='center', color=(0, 0, 0, 255))

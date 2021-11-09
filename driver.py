@@ -18,6 +18,7 @@ import math
 
 
 from pyglet.window import key
+from pyglet.window import mouse
 from pyglet.gl import glClearColor
 from datetime import datetime
 from hex_cell import HexCell
@@ -37,6 +38,8 @@ start_time = datetime.now()
 WIDTH = 1280
 HEIGHT = 720
 HEX_SCALE = 0.1
+GRID_SIZE = 5
+DIFFICULTY = 0.9
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
@@ -47,6 +50,7 @@ grid = []
 grid_batch = pyglet.graphics.Batch()
 draw = []
 mines = []
+first_move = True
 
 
 def main():
@@ -56,10 +60,10 @@ def main():
     initialize()
 
     # Generate the grid
-    generate_hexagonal_grid(5)
+    generate_hexagonal_grid(GRID_SIZE)
 
     # Generate mines
-    generate_mines(20)
+    generate_mines(int(len(grid) * DIFFICULTY))
 
     # Tell the mines to love thy neighbor
     hex_cell.generate_neighbor_numbers(grid)
@@ -74,7 +78,7 @@ def main():
     for cell in grid:
         cell.render(HEX_SCALE, window.width, window.height)
 
-    pyglet.clock.schedule_interval(func=update, interval=1/60)
+    pyglet.clock.schedule_interval(func=update, interval=1/240)
     pyglet.app.run()
 
 
@@ -158,6 +162,8 @@ def on_mouse_motion(x, y, dx, dy):
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
+            if sprite.image.height != sprite.image.width:
+                LOG.critical("Invalid sprite image used, height/width mismatch")
             radius = sprite.image.height * HEX_SCALE / 2
             # Pythagorean theorem moment pog
             distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
@@ -168,7 +174,7 @@ def on_mouse_motion(x, y, dx, dy):
 
 
 @window.event
-def on_mouse_press(x, y, dx, dy):
+def on_mouse_press(x, y, buttons, modifiers):
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
@@ -176,7 +182,16 @@ def on_mouse_press(x, y, dx, dy):
             # Pythagorean theorem moment pog
             distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
             if distance < radius:
-                cell.mine()
+                if buttons == mouse.LEFT:
+                    global first_move
+                    if first_move and (cell.get_neighbor_number() != 0 or cell.get_mine()):
+                        reset()
+                        on_mouse_press(x, y, buttons, modifiers)
+                    else:
+                        first_move = False
+                        cell.mine()
+                if buttons == mouse.RIGHT:
+                    cell.toggle_flag()
 
 
 @window.event
@@ -188,7 +203,7 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.ENTER:
         print('The enter key was pressed.')
     elif symbol == key.R:
-        print("bruh")
+        reset()
         window.invalid = True
 
 
@@ -197,6 +212,20 @@ def on_key_press(symbol, modifiers):
 def on_close():
     LOG.debug("Window close detected")
     finalize_log()
+
+
+def reset():
+    print("Resetting")
+    LOG.info("Resetting")
+    global grid, mines, first_move
+    grid = []
+    mines = []
+    first_move = True
+    generate_hexagonal_grid(GRID_SIZE)
+    generate_mines(int(len(grid) * DIFFICULTY))
+    hex_cell.generate_neighbor_numbers(grid)
+    for cell in grid:
+        cell.render(HEX_SCALE, window.width, window.height)
 
 
 def center_image(image):
