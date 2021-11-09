@@ -204,13 +204,26 @@ def on_mouse_press(x, y, buttons, modifiers):
                                                        x=window.width / 2,
                                                        y=1.5 * window.height / 2,
                                                        anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                            label2 = pyglet.text.Label("L", font_name=SANS_SERIF, font_size=100,
+                            label2 = pyglet.text.Label("L", font_name=SANS_SERIF, font_size=200,
                                                        x=window.width / 2,
                                                        y=window.height / 2,
                                                        anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
                             draw.append(label1)
                             draw.append(label2)
                             live = False
+                        else:
+                            uncovered = 0
+                            for cell in grid:
+                                if not cell.alive():
+                                    uncovered += 1
+                            if len(grid) * (1 - DIFFICULTY) <= uncovered:
+                                LOG.info("Game won")
+                                label = pyglet.text.Label("W", font_name=SANS_SERIF, font_size=200,
+                                                          x=window.width / 2,
+                                                          y=window.height / 2,
+                                                          anchor_x='center', anchor_y='center', color=(0, 255, 0, 255))
+                                draw.append(label)
+                                live = False
                 if buttons == mouse.RIGHT:
                     cell.toggle_flag()
 
@@ -235,7 +248,6 @@ def on_close():
 
 
 def reset():
-    print("Resetting")
     LOG.info("Resetting")
     global grid, mines, draw, live, first_move
     grid = []
