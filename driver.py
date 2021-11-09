@@ -16,7 +16,6 @@ import datetime
 import json
 import math
 
-
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.gl import glClearColor
@@ -39,7 +38,8 @@ WIDTH = 1280
 HEIGHT = 720
 HEX_SCALE = 0.1
 GRID_SIZE = 5
-DIFFICULTY = 0.9
+DIFFICULTY = 0.25
+SANS_SERIF = pyglet.font.load(None, 16)
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
@@ -51,6 +51,7 @@ grid_batch = pyglet.graphics.Batch()
 draw = []
 mines = []
 first_move = True
+live = True
 
 
 def main():
@@ -78,7 +79,7 @@ def main():
     for cell in grid:
         cell.render(HEX_SCALE, window.width, window.height)
 
-    pyglet.clock.schedule_interval(func=update, interval=1/240)
+    pyglet.clock.schedule_interval(func=update, interval=1 / 240)
     pyglet.app.run()
 
 
@@ -156,9 +157,14 @@ def on_draw():
         label = cell.get_label()
         if label is not None:
             label.draw()
+    for drawable in draw:
+        drawable.draw()
+
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
+    if not live:
+        return
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
@@ -166,7 +172,7 @@ def on_mouse_motion(x, y, dx, dy):
                 LOG.critical("Invalid sprite image used, height/width mismatch")
             radius = sprite.image.height * HEX_SCALE / 2
             # Pythagorean theorem moment pog
-            distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
+            distance = math.sqrt((x - sprite.x) ** 2 + (y - sprite.y) ** 2)
             if distance < radius:
                 cell.hover()
             else:
@@ -175,12 +181,15 @@ def on_mouse_motion(x, y, dx, dy):
 
 @window.event
 def on_mouse_press(x, y, buttons, modifiers):
+    global live
+    if not live:
+        return
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
             radius = sprite.image.height * HEX_SCALE / 2
             # Pythagorean theorem moment pog
-            distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
+            distance = math.sqrt((x - sprite.x) ** 2 + (y - sprite.y) ** 2)
             if distance < radius:
                 if buttons == mouse.LEFT:
                     global first_move
@@ -189,7 +198,19 @@ def on_mouse_press(x, y, buttons, modifiers):
                         on_mouse_press(x, y, buttons, modifiers)
                     else:
                         first_move = False
-                        cell.mine()
+                        if cell.mine():
+                            LOG.info("Game lost")
+                            label1 = pyglet.text.Label("Here hold this real quick", font_name=SANS_SERIF, font_size=32,
+                                                       x=window.width / 2,
+                                                       y=1.5 * window.height / 2,
+                                                       anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
+                            label2 = pyglet.text.Label("L", font_name=SANS_SERIF, font_size=100,
+                                                       x=window.width / 2,
+                                                       y=window.height / 2,
+                                                       anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
+                            draw.append(label1)
+                            draw.append(label2)
+                            live = False
                 if buttons == mouse.RIGHT:
                     cell.toggle_flag()
 
@@ -207,7 +228,6 @@ def on_key_press(symbol, modifiers):
         window.invalid = True
 
 
-
 @window.event
 def on_close():
     LOG.debug("Window close detected")
@@ -217,10 +237,12 @@ def on_close():
 def reset():
     print("Resetting")
     LOG.info("Resetting")
-    global grid, mines, first_move
+    global grid, mines, draw, live, first_move
     grid = []
     mines = []
+    draw = []
     first_move = True
+    live = True
     generate_hexagonal_grid(GRID_SIZE)
     generate_mines(int(len(grid) * DIFFICULTY))
     hex_cell.generate_neighbor_numbers(grid)
