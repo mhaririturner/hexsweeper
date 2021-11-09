@@ -21,6 +21,7 @@ from pyglet.window import key
 from pyglet.gl import glClearColor
 from datetime import datetime
 from hex_cell import HexCell
+import hex_cell
 
 FILE_CONFIG = "config.json"
 
@@ -59,6 +60,9 @@ def main():
 
     # Generate mines
     generate_mines(5)
+
+    # Tell the mines to love thy neighbor
+    hex_cell.generate_neighbor_numbers(grid)
 
     # Set icon
     window.set_icon(pyglet.image.load("resources/hex.png"))
@@ -145,6 +149,9 @@ def on_draw():
     window.clear()
     for cell in grid:
         cell.get_sprite().draw()
+        label = cell.get_label()
+        if label is not None:
+            label.draw()
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):

@@ -25,13 +25,22 @@ HEX_CLEAR.anchor_y = HEX_CLEAR.height // 2
 HEX_BLOWN = pyglet.image.load("resources/hex_blown.png")
 HEX_BLOWN.anchor_x = HEX_BLOWN.width // 2
 HEX_BLOWN.anchor_y = HEX_BLOWN.height // 2
+SANS_SERIF = pyglet.font.load(None, 16)
+FONT_SIZE = 16
 
 # Instance variables
 h = 0
 k = 0
 sprite = None
+label = None
 is_mine = None
 is_live = None
+neighbors = None
+
+
+def generate_neighbor_numbers(grid):
+    for cell in grid:
+        cell.assess_neighbors(grid)
 
 
 class HexCell(object):
@@ -39,8 +48,10 @@ class HexCell(object):
         self.h = major
         self.k = minor
         self.sprite = pyglet.sprite.Sprite(img=HEX_IMAGE)
+        self.label = None
         self.is_mine = False
         self.is_live = True
+        self.neighbors = 0
 
     def get_h(self):
         return self.h
@@ -61,9 +72,14 @@ class HexCell(object):
         diameter = HEX_IMAGE.width * scale
         self.sprite.update(scale=scale, x=window_width / 2 + self.get_x(diameter),
                            y=window_height / 2 + self.get_y(diameter))
+        self.make_label(diameter, window_width, window_height)
 
     def get_sprite(self):
         return self.sprite
+
+    def get_label(self):
+        if self.neighbors > 0:
+            return self.label
 
     def hover(self):
         image = HEX_HOVER
@@ -88,3 +104,18 @@ class HexCell(object):
             image = HEX_BLOWN
             self.sprite.image = image
         return self.is_mine
+
+    def assess_neighbors(self, grid):
+        neighbors = 0
+        for cell in grid:
+            if cell.get_mine():
+                for dx in range(-1, 2):
+                    for dy in range(-1, 2):
+                        if dx != dy and cell.get_h() == self.get_h() + dx and cell.get_k() == self.get_k() + dy:
+                            neighbors += 1
+        self.neighbors = neighbors
+
+    def make_label(self, diameter, window_width, window_height):
+        self.label = pyglet.text.Label(str(self.neighbors), font_name=SANS_SERIF, font_size=FONT_SIZE,
+                                       x=window_width / 2 + self.get_x(diameter),
+                                       y=window_height / 2 + self.get_y(diameter), anchor_x='center', anchor_y='center')
