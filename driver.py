@@ -59,7 +59,7 @@ def main():
     generate_hexagonal_grid(5)
 
     # Generate mines
-    generate_mines(5)
+    generate_mines(20)
 
     # Tell the mines to love thy neighbor
     hex_cell.generate_neighbor_numbers(grid)
@@ -93,7 +93,7 @@ def generate_mines(number):
     for i in range(0, number):
         retry = True
         while retry:
-            target = randint(0, len(grid))
+            target = randint(0, len(grid) - 1)
             if not grid[target].get_mine():
                 retry = False
                 grid[target].set_mine()

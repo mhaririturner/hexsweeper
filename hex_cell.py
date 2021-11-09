@@ -35,7 +35,8 @@ sprite = None
 label = None
 is_mine = None
 is_live = None
-neighbors = None
+list_neighbors = None
+mine_neighbors = 0
 
 
 def generate_neighbor_numbers(grid):
@@ -51,7 +52,8 @@ class HexCell(object):
         self.label = None
         self.is_mine = False
         self.is_live = True
-        self.neighbors = 0
+        self.mine_neighbors = 0
+        self.list_neighbors = []
 
     def get_h(self):
         return self.h
@@ -78,7 +80,9 @@ class HexCell(object):
         return self.sprite
 
     def get_label(self):
-        if self.neighbors > 0:
+        if self.is_mine:
+            return None
+        if self.mine_neighbors > 0 and (not self.is_live):
             return self.label
 
     def hover(self):
@@ -100,6 +104,12 @@ class HexCell(object):
         if not self.is_mine:
             image = HEX_CLEAR
             self.sprite.image = image
+            if self.mine_neighbors == 0:
+                print("Cascading")
+                print(len(self.list_neighbors))
+                for cell in self.list_neighbors:
+                    if cell.alive():
+                        cell.mine()
         else:
             image = HEX_BLOWN
             self.sprite.image = image
@@ -108,14 +118,17 @@ class HexCell(object):
     def assess_neighbors(self, grid):
         neighbors = 0
         for cell in grid:
-            if cell.get_mine():
-                for dx in range(-1, 2):
-                    for dy in range(-1, 2):
-                        if dx != dy and cell.get_h() == self.get_h() + dx and cell.get_k() == self.get_k() + dy:
-                            neighbors += 1
-        self.neighbors = neighbors
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    if dx != dy:
+                        if cell.get_h() == self.get_h() + dx and cell.get_k() == self.get_k() + dy:
+                            self.list_neighbors.append(cell)
+                            if cell.get_mine():
+                                neighbors += 1
+        self.mine_neighbors = neighbors
 
     def make_label(self, diameter, window_width, window_height):
-        self.label = pyglet.text.Label(str(self.neighbors), font_name=SANS_SERIF, font_size=FONT_SIZE,
+        self.label = pyglet.text.Label(str(self.mine_neighbors), font_name=SANS_SERIF, font_size=FONT_SIZE,
                                        x=window_width / 2 + self.get_x(diameter),
-                                       y=window_height / 2 + self.get_y(diameter), anchor_x='center', anchor_y='center')
+                                       y=window_height / 2 + self.get_y(diameter),
+                                       anchor_x='center', anchor_y='center', color=(0, 0, 0, 255))
