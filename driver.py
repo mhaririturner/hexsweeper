@@ -7,12 +7,15 @@ driver.py: does stuff
 __author__ = "Max Hariri-Turner"
 __email__ = "maxkht8@gmail.com"
 
+from random import randint
+
 import pyglet
 import logging
 import os
 import datetime
 import json
 import math
+
 
 from pyglet.window import key
 from pyglet.gl import glClearColor
@@ -36,39 +39,65 @@ HEX_SCALE = 0.1
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
-window = pyglet.window.Window(WIDTH, HEIGHT, "hexsweeper", resizable=True)
+window = pyglet.window.Window(width=WIDTH, height=HEIGHT, caption="hexsweeper", resizable=True)
 event_loop = pyglet.app.EventLoop()
 config = {"log_dir": "logs/", "log_ext": ".txt"}
-draw = []
 grid = []
+grid_batch = pyglet.graphics.Batch()
+draw = []
+mines = []
 
 
 def main():
+    # Initialize crap
     initialize_log()
     load_config()
     initialize()
-    generate_hexagonal_grid(3)
-    hex_image = pyglet.image.load("resources/hex.png")
-    center_image(hex_image)
-    hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=WIDTH / 2, y=HEIGHT / 2)
-    hex_sprite.update(scale=HEX_SCALE)
-    window.set_icon(hex_image)
+
+    # Generate the grid
+    generate_hexagonal_grid(5)
+
+    # Generate mines
+    generate_mines(5)
+
+    # Set icon
+    window.set_icon(pyglet.image.load("resources/hex.png"))
 
     # Set background to white
     glClearColor(255, 255, 255, 1.0)
 
-    draw.append(hex_sprite)
+    # Initial rendering pass for cells
+    for cell in grid:
+        cell.render(HEX_SCALE, window.width, window.height)
+
+    pyglet.clock.schedule_interval(func=update, interval=1/60)
     pyglet.app.run()
 
 
 def generate_hexagonal_grid(radius):
-    for h in range(-radius, radius+1):
-        for k in range(-radius, radius+1):
+    LOG.debug(f"Generating hexagonal grid with radius {radius}")
+    for h in range(-radius, radius + 1):
+        for k in range(-radius, radius + 1):
             if h * k > 0 and abs(h + k) > radius:
                 LOG.debug(f"Skipped cell at ({h}, {k})")
             else:
                 grid.append(HexCell(h, k))
                 LOG.debug(f"Generating cell at ({h}, {k})")
+
+
+def generate_mines(number):
+    for i in range(0, number):
+        retry = True
+        while retry:
+            target = randint(0, len(grid))
+            if not grid[target].get_mine():
+                retry = False
+                grid[target].set_mine()
+                mines.append(grid[target])
+
+
+def update(dt):
+    return
 
 
 def initialize():
@@ -114,17 +143,33 @@ def load_config():
 @window.event
 def on_draw():
     window.clear()
-    for drawable in draw:
-        drawable.draw()
-    hex_image = pyglet.image.load("resources/hex.png")
-    center_image(hex_image)
-    for hex in grid:
-        hex_sprite = pyglet.sprite.Sprite(img=hex_image, x=WIDTH / 2, y=HEIGHT / 2)
-        if hex_image.width != hex_image.height:
-            LOG.warning("Hex sprite height and width are not equal, this should never be the case")
-        diameter = hex_image.width * HEX_SCALE
-        hex_sprite.update(scale=HEX_SCALE, x=WIDTH / 2 + hex.get_x(diameter), y=HEIGHT / 2 + hex.get_y(diameter))
-        hex_sprite.draw()
+    for cell in grid:
+        cell.get_sprite().draw()
+
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    for cell in grid:
+        if cell.alive():
+            sprite = cell.get_sprite()
+            radius = sprite.image.height * HEX_SCALE / 2
+            # Pythagorean theorem moment pog
+            distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
+            if distance < radius:
+                cell.hover()
+            else:
+                cell.unhover()
+
+
+@window.event
+def on_mouse_press(x, y, dx, dy):
+    for cell in grid:
+        if cell.alive():
+            sprite = cell.get_sprite()
+            radius = sprite.image.height * HEX_SCALE / 2
+            # Pythagorean theorem moment pog
+            distance = math.sqrt((x - sprite.x)**2 + (y - sprite.y)**2)
+            if distance < radius:
+                cell.mine()
 
 
 @window.event
