@@ -79,7 +79,7 @@ def main():
     for cell in grid:
         cell.render(HEX_SCALE, window.width, window.height)
 
-    pyglet.clock.schedule_interval(func=update, interval=1 / 240)
+    pyglet.clock.schedule_interval(func=update, interval=1 / 60)
     pyglet.app.run()
 
 
@@ -184,6 +184,11 @@ def on_mouse_press(x, y, buttons, modifiers):
     global live
     if not live:
         return
+    render(x, y, buttons, modifiers)
+
+
+def render(x, y, buttons, modifiers):
+    global live
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
@@ -195,7 +200,7 @@ def on_mouse_press(x, y, buttons, modifiers):
                     global first_move
                     if first_move and (cell.get_neighbor_number() != 0 or cell.get_mine()):
                         reset()
-                        on_mouse_press(x, y, buttons, modifiers)
+                        render(x, y, buttons, modifiers)
                     else:
                         first_move = False
                         if cell.mine():
