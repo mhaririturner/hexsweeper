@@ -46,7 +46,7 @@ class HexCell(object):
         self.is_mine = False
         self.is_live = True
         self.flagged = False
-        self.neighbor_number = 0
+        self.neighbor_number = None
         self.list_neighbors = None
 
     def get_h(self):
@@ -66,9 +66,9 @@ class HexCell(object):
 
     def render(self, scale, window_width, window_height):
         diameter = HEX_IMAGE.width * scale
+        self.make_label(diameter, window_width, window_height)
         self.sprite.update(scale=scale, x=window_width / 2 + self.get_x(diameter),
                            y=window_height / 2 + self.get_y(diameter))
-        self.make_label(diameter, window_width, window_height)
 
     def get_sprite(self):
         return self.sprite

@@ -125,6 +125,11 @@ def generate_mines(number):
 
 
 def update(dt):
+    """
+    Necessary method to use pyglet internal draw updates
+    :param dt: How much time has elapsed
+    :return: None
+    """
     return
 
 
@@ -175,21 +180,31 @@ def on_draw():
     """
     window.clear()
     flag_count = 0
+    # Display all the cells
     for cell in grid:
         cell.get_sprite().draw()
         label = cell.get_label()
         if label is not None:
+            cell.render(HEX_SCALE, window.width, window.height)
             label.draw()
+
         if cell.is_flagged():
             flag_count += 1
+
+    # Display any context-specific labels
     for drawable in draw:
         drawable.draw()
-    remaining_flags = len(mines) - flag_count
-    flag_label = pyglet.text.Label(f"mines remaining: {remaining_flags}", font_name=FONT, font_size=16,
-                                   color=COLOR_BLACK)
-    visual_offset = flag_label.content_height
-    flag_label.update(visual_offset, window.height - visual_offset)
+    # Display flag counter label
+    flags = len(mines) - flag_count
+    flag_label = pyglet.text.Label(f"mines remaining: {flags}", font_name=FONT, font_size=16, color=COLOR_BLACK)
+    flag_visual_offset = flag_label.content_height
+    flag_label.update(flag_visual_offset, window.height - flag_visual_offset)
     flag_label.draw()
+    # Display reset info label
+    reset_label = pyglet.text.Label(f"press \"r\" to restart", font_name=FONT, font_size=16, color=COLOR_BLACK)
+    reset_visual_offset = reset_label.content_height
+    reset_label.update(reset_visual_offset, reset_visual_offset)
+    reset_label.draw()
 
 
 @window.event
@@ -244,6 +259,7 @@ def on_mouse_press(x, y, buttons, modifiers):
                         LOG.debug("Unacceptable first move, reconfiguring board")
                         mines_to_replenish = 0
                         replace = cell.get_neighbors()
+                        replace.append(cell)
                         for cell_to_replace in replace:
                             if cell_to_replace.get_mine():
                                 cell_to_replace.set_not_mine()
@@ -251,13 +267,16 @@ def on_mouse_press(x, y, buttons, modifiers):
                                 mines_to_replenish += 1
                         options = []
                         for option in grid:
-                            if not (option in replace or option is cell):
+                            if option not in replace and not option.get_mine():
                                 options.append(option)
                         for i in range(0, mines_to_replenish):
                             target = randint(0, len(options) - 1)
                             mines.append(options[target])
+                            options[target].set_mine()
                             options.remove(options[target])
-                        hex_cell.generate_neighbor_numbers(grid)
+                        for refresh in grid:
+                            refresh.assess_neighbors(grid)
+                    # hex_cell.generate_neighbor_numbers(grid)
                     first_move = False
                     if cell.mine():
                         LOG.info("Game lost")
