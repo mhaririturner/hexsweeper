@@ -1,7 +1,7 @@
 #!/bin/bash
 
 """
-driver.py: does stuff
+driver.py: Main driver for the hexsweeper game
 """
 
 __author__ = "Max Hariri-Turner"
@@ -55,10 +55,14 @@ live = True
 
 
 def main():
+    """
+    Main loop for the game
+    :return: None
+    """
     # Initialize crap
     initialize_log()
     load_config()
-    initialize()
+    pyglet.options["vsync"] = True
 
     # Generate the grid
     generate_hexagonal_grid(GRID_SIZE)
@@ -84,6 +88,11 @@ def main():
 
 
 def generate_hexagonal_grid(radius):
+    """
+    Generates a "regular" hexagonal grid from a specified radius
+    :param radius: The "radius" of the hexagonal grid
+    :return: None
+    """
     LOG.debug(f"Generating hexagonal grid with radius {radius}")
     for h in range(-radius, radius + 1):
         for k in range(-radius, radius + 1):
@@ -95,6 +104,11 @@ def generate_hexagonal_grid(radius):
 
 
 def generate_mines(number):
+    """
+    Randomly generates a specified number of mines in a grid
+    :param number: The quantity of mines to generate
+    :return: None
+    """
     for i in range(0, number):
         retry = True
         while retry:
@@ -109,12 +123,11 @@ def update(dt):
     return
 
 
-def initialize():
-    LOG.debug("Initializing")
-    pyglet.options["vsync"] = True
-
-
 def initialize_log():
+    """
+    Start the logging function
+    :return: None
+    """
     global start_time
     file_name = f"{config['log_dir']}{start_time.strftime('%Y_%m_%d_%H_%M_%S')}{config['log_ext']}"
     logging.basicConfig(filename=file_name, level=default_logging_level, format=LOGGING_FORMAT,
@@ -151,6 +164,10 @@ def load_config():
 
 @window.event
 def on_draw():
+    """
+    Defines draw update cycles
+    :return: None
+    """
     window.clear()
     for cell in grid:
         cell.get_sprite().draw()
@@ -163,6 +180,14 @@ def on_draw():
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
+    """
+    Updates sprites on mouseover
+    :param x: Mouse x coordinate
+    :param y: Mouse y coordinate
+    :param dx: Mouse x direction
+    :param dy: Mouse y direction
+    :return: None
+    """
     if not live:
         return
     for cell in grid:
@@ -181,14 +206,17 @@ def on_mouse_motion(x, y, dx, dy):
 
 @window.event
 def on_mouse_press(x, y, buttons, modifiers):
+    """
+    Executes main game loop logic
+    :param x: The x coordinate of the mouse press
+    :param y: The y coordinate of the mouse pres
+    :param buttons: Any buttons pressed
+    :param modifiers: Any modifiers pressed
+    :return: None
+    """
     global live
     if not live:
         return
-    render(x, y, buttons, modifiers)
-
-
-def render(x, y, buttons, modifiers):
-    global live
     for cell in grid:
         if cell.alive():
             sprite = cell.get_sprite()
@@ -200,7 +228,7 @@ def render(x, y, buttons, modifiers):
                     global first_move
                     if first_move and (cell.get_neighbor_number() != 0 or cell.get_mine()):
                         reset()
-                        render(x, y, buttons, modifiers)
+                        on_mouse_press(x, y, buttons, modifiers)
                     else:
                         first_move = False
                         if cell.mine():
@@ -235,24 +263,32 @@ def render(x, y, buttons, modifiers):
 
 @window.event
 def on_key_press(symbol, modifiers):
-    if symbol == key.A:
-        print('The "A" key was pressed.')
-    elif symbol == key.LEFT:
-        print('The left arrow key was pressed.')
-    elif symbol == key.ENTER:
-        print('The enter key was pressed.')
-    elif symbol == key.R:
+    """
+    Handles keypress functionality
+    :param symbol: The symbol pressed
+    :param modifiers: Any key modifiers applied
+    :return: None
+    """
+    if symbol == key.R:
         reset()
         window.invalid = True
 
 
 @window.event
 def on_close():
+    """
+    Handles window close functionality
+    :return: None
+    """
     LOG.debug("Window close detected")
     finalize_log()
 
 
 def reset():
+    """
+    Resets the game
+    :return: None
+    """
     LOG.info("Resetting")
     global grid, mines, draw, live, first_move
     grid = []
@@ -270,6 +306,8 @@ def reset():
 def center_image(image):
     """
     Sets an image's anchor point to its center
+    :param image: The image to center
+    :return: None
     """
     image.anchor_x = image.width // 2
     image.anchor_y = image.height // 2
