@@ -193,11 +193,12 @@ def on_draw():
     for drawable in draw:
         drawable.draw()
     # Display flag counter label
-    flags = len(mines) - flag_count
-    flag_label = pyglet.text.Label(f"mines remaining: {flags}", font_name=FONT, font_size=16, color=COLOR_BLACK)
-    flag_visual_offset = flag_label.content_height
-    flag_label.update(flag_visual_offset, window.height - flag_visual_offset)
-    flag_label.draw()
+    if live:
+        flags = len(mines) - flag_count
+        flag_label = pyglet.text.Label(f"mines remaining: {flags}", font_name=FONT, font_size=16, color=COLOR_BLACK)
+        flag_visual_offset = flag_label.content_height
+        flag_label.update(flag_visual_offset, window.height - flag_visual_offset)
+        flag_label.draw()
     # Display reset info label
     reset_label = pyglet.text.Label(f"press \"r\" to restart", font_name=FONT, font_size=16, color=COLOR_BLACK)
     reset_visual_offset = reset_label.content_height
