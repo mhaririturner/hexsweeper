@@ -263,6 +263,7 @@ def on_mouse_press(x, y, buttons, modifiers):
                                 cell_to_replace.set_not_mine()
                                 mines.remove(cell_to_replace)
                                 mines_to_replenish += 1
+                        # Make an array of all possible (non-mine) cells which can "legally" be turned into mines
                         options = []
                         for option in grid:
                             if option not in replace and not option.get_mine():
@@ -277,18 +278,19 @@ def on_mouse_press(x, y, buttons, modifiers):
                     first_move = False
                     if cell.mine():
                         LOG.info("Game lost")
+                        # Expose all remaining mines
                         for c in mines:
                             c.mine()
-                        label1 = pyglet.text.Label("Here hold this real quick", font_name=FONT, font_size=32,
-                                                   x=window.width / 2,
-                                                   y=1.5 * window.height / 2,
-                                                   anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                        label2 = pyglet.text.Label("L", font_name=FONT, font_size=200,
-                                                   x=window.width / 2,
-                                                   y=window.height / 2,
-                                                   anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                        draw.append(label1)
-                        draw.append(label2)
+                        # Temporary loss screen
+                        label = pyglet.text.Label("loss", font_name=FONT, font_size=200, x=window.width / 2,
+                                                  y=window.height / 2, anchor_x='center', anchor_y='center',
+                                                  color=(255, 0, 0, 255))
+                        backing = pyglet.shapes.Rectangle(window.width / 2 - label.content_width / 2,
+                                                          window.height / 2 - label.content_height / 2,
+                                                          label.content_width, label.content_height, color=(0, 0, 0))
+                        backing.opacity = 128
+                        draw.append(backing)
+                        draw.append(label)
                         live = False
                     else:
                         swept = 0
@@ -297,10 +299,16 @@ def on_mouse_press(x, y, buttons, modifiers):
                                 swept += 1
                         if len(grid) * (1 - DIFFICULTY) <= swept:
                             LOG.info("Game won")
-                            label = pyglet.text.Label("W", font_name=FONT, font_size=200,
-                                                      x=window.width / 2,
-                                                      y=window.height / 2,
-                                                      anchor_x='center', anchor_y='center', color=(0, 255, 0, 255))
+                            # Temporary win screen
+                            label = pyglet.text.Label("win", font_name=FONT, font_size=200, x=window.width / 2,
+                                                      y=window.height / 2, anchor_x='center', anchor_y='center',
+                                                      color=(0, 255, 0, 255))
+                            backing = pyglet.shapes.Rectangle(window.width / 2 - label.content_width / 2,
+                                                              window.height / 2 - label.content_height / 2,
+                                                              label.content_width, label.content_height,
+                                                              color=(0, 0, 0))
+                            backing.opacity = 128
+                            draw.append(backing)
                             draw.append(label)
                             live = False
                 elif buttons == mouse.RIGHT:
