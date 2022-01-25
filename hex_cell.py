@@ -31,17 +31,6 @@ HEX_FLAGGED.anchor_y = HEX_FLAGGED.height // 2
 SANS_SERIF = pyglet.font.load(None, 16)
 FONT_SIZE = 16
 
-# Instance variables
-h = None
-k = None
-sprite = None
-label = None
-is_mine = None
-is_live = None
-flagged = None
-list_neighbors = None
-neighbor_number = None
-
 
 def generate_neighbor_numbers(grid):
     for cell in grid:
@@ -58,7 +47,7 @@ class HexCell(object):
         self.is_live = True
         self.flagged = False
         self.neighbor_number = 0
-        self.list_neighbors = []
+        self.list_neighbors = None
 
     def get_h(self):
         return self.h
@@ -114,6 +103,9 @@ class HexCell(object):
     def set_mine(self):
         self.is_mine = True
 
+    def set_not_mine(self):
+        self.is_mine = False
+
     def get_neighbor_number(self):
         return self.neighbor_number
 
@@ -132,6 +124,7 @@ class HexCell(object):
         return self.is_mine
 
     def assess_neighbors(self, grid):
+        self.list_neighbors = []
         neighbors = 0
         for cell in grid:
             for dx in range(-1, 2):
@@ -142,6 +135,9 @@ class HexCell(object):
                             if cell.get_mine():
                                 neighbors += 1
         self.neighbor_number = neighbors
+
+    def get_neighbors(self):
+        return self.list_neighbors
 
     def make_label(self, diameter, window_width, window_height):
         self.label = pyglet.text.Label(str(self.neighbor_number), font_name=SANS_SERIF, font_size=FONT_SIZE,

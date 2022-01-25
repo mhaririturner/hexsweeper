@@ -41,6 +41,7 @@ GRID_SIZE = 5
 DIFFICULTY = 0.25
 FONT = pyglet.font.load(None, 16)
 COLOR_BLACK = (0, 0, 0, 255)
+PROD_MODE = False
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
@@ -84,7 +85,9 @@ def main():
     for cell in grid:
         cell.render(HEX_SCALE, window.width, window.height)
 
-    window.set_exclusive_keyboard()
+    if PROD_MODE:
+        window.set_exclusive_keyboard()
+        window.set_fullscreen()
     pyglet.clock.schedule_interval(func=update, interval=1 / 60)
     pyglet.app.run()
 
@@ -238,37 +241,53 @@ def on_mouse_press(x, y, buttons, modifiers):
                 if buttons == mouse.LEFT:
                     global first_move
                     if first_move and (cell.get_neighbor_number() != 0 or cell.get_mine()):
-                        reset()
-                        on_mouse_press(x, y, buttons, modifiers)
+                        LOG.debug("Unacceptable first move, reconfiguring board")
+                        mines_to_replenish = 0
+                        replace = cell.get_neighbors()
+                        for cell_to_replace in replace:
+                            if cell_to_replace.get_mine():
+                                cell_to_replace.set_not_mine()
+                                mines.remove(cell_to_replace)
+                                mines_to_replenish += 1
+                        options = []
+                        for option in grid:
+                            if not (option in replace or option is cell):
+                                options.append(option)
+                        for i in range(0, mines_to_replenish):
+                            target = randint(0, len(options) - 1)
+                            mines.append(options[target])
+                            options.remove(options[target])
+                        hex_cell.generate_neighbor_numbers(grid)
+                    first_move = False
+                    if cell.mine():
+                        LOG.info("Game lost")
+                        for c in mines:
+                            c.mine()
+                        label1 = pyglet.text.Label("Here hold this real quick", font_name=FONT, font_size=32,
+                                                   x=window.width / 2,
+                                                   y=1.5 * window.height / 2,
+                                                   anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
+                        label2 = pyglet.text.Label("L", font_name=FONT, font_size=200,
+                                                   x=window.width / 2,
+                                                   y=window.height / 2,
+                                                   anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
+                        draw.append(label1)
+                        draw.append(label2)
+                        live = False
                     else:
-                        first_move = False
-                        if cell.mine():
-                            LOG.info("Game lost")
-                            label1 = pyglet.text.Label("Here hold this real quick", font_name=FONT, font_size=32,
-                                                       x=window.width / 2,
-                                                       y=1.5 * window.height / 2,
-                                                       anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                            label2 = pyglet.text.Label("L", font_name=FONT, font_size=200,
-                                                       x=window.width / 2,
-                                                       y=window.height / 2,
-                                                       anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                            draw.append(label1)
-                            draw.append(label2)
+                        uncovered = 0
+                        for check_cell in grid:
+                            if not check_cell.alive():
+                                uncovered += 1
+                        if len(grid) * (1 - DIFFICULTY) <= uncovered:
+                            LOG.info("Game won")
+                            label = pyglet.text.Label("W", font_name=FONT, font_size=200,
+                                                      x=window.width / 2,
+                                                      y=window.height / 2,
+                                                      anchor_x='center', anchor_y='center', color=(0, 255, 0, 255))
+                            draw.append(label)
                             live = False
-                        else:
-                            uncovered = 0
-                            for cell in grid:
-                                if not cell.alive():
-                                    uncovered += 1
-                            if len(grid) * (1 - DIFFICULTY) <= uncovered:
-                                LOG.info("Game won")
-                                label = pyglet.text.Label("W", font_name=FONT, font_size=200,
-                                                          x=window.width / 2,
-                                                          y=window.height / 2,
-                                                          anchor_x='center', anchor_y='center', color=(0, 255, 0, 255))
-                                draw.append(label)
-                                live = False
-                if buttons == mouse.RIGHT:
+                elif buttons == mouse.RIGHT:
                     cell.toggle_flag()
 
 
