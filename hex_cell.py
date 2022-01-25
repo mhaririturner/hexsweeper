@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env python
 
 """
 hex_cell.py: does stuff
@@ -69,6 +69,7 @@ class HexCell(object):
         self.make_label(diameter, window_width, window_height)
         self.sprite.update(scale=scale, x=window_width / 2 + self.get_x(diameter),
                            y=window_height / 2 + self.get_y(diameter))
+        self.label.draw()
 
     def get_sprite(self):
         return self.sprite

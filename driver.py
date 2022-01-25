@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env python
 
 """
 driver.py: Main driver for the hexsweeper game
@@ -186,7 +186,7 @@ def on_draw():
         label = cell.get_label()
         if label is not None:
             cell.render(HEX_SCALE, window.width, window.height)
-            label.draw()
+            #label.draw()
 
         if cell.is_flagged():
             flag_count += 1
