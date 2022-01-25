@@ -101,6 +101,9 @@ class HexCell(object):
             self.sprite.image = HEX_IMAGE
         self.flagged = not self.flagged
 
+    def is_flagged(self):
+        return self.flagged
+
     def unhover(self):
         if not self.flagged:
             self.sprite.image = HEX_IMAGE

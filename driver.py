@@ -39,7 +39,8 @@ HEIGHT = 720
 HEX_SCALE = 0.1
 GRID_SIZE = 5
 DIFFICULTY = 0.25
-SANS_SERIF = pyglet.font.load(None, 16)
+FONT = pyglet.font.load(None, 16)
+COLOR_BLACK = (0, 0, 0, 255)
 
 # Global variables
 LOG = logging.getLogger(LOG_NAME)
@@ -83,6 +84,7 @@ def main():
     for cell in grid:
         cell.render(HEX_SCALE, window.width, window.height)
 
+    window.set_exclusive_keyboard()
     pyglet.clock.schedule_interval(func=update, interval=1 / 60)
     pyglet.app.run()
 
@@ -169,13 +171,22 @@ def on_draw():
     :return: None
     """
     window.clear()
+    flag_count = 0
     for cell in grid:
         cell.get_sprite().draw()
         label = cell.get_label()
         if label is not None:
             label.draw()
+        if cell.is_flagged():
+            flag_count += 1
     for drawable in draw:
         drawable.draw()
+    remaining_flags = len(mines) - flag_count
+    flag_label = pyglet.text.Label(f"mines remaining: {remaining_flags}", font_name=FONT, font_size=16,
+                                   color=COLOR_BLACK)
+    visual_offset = flag_label.content_height
+    flag_label.update(visual_offset, window.height - visual_offset)
+    flag_label.draw()
 
 
 @window.event
@@ -233,11 +244,11 @@ def on_mouse_press(x, y, buttons, modifiers):
                         first_move = False
                         if cell.mine():
                             LOG.info("Game lost")
-                            label1 = pyglet.text.Label("Here hold this real quick", font_name=SANS_SERIF, font_size=32,
+                            label1 = pyglet.text.Label("Here hold this real quick", font_name=FONT, font_size=32,
                                                        x=window.width / 2,
                                                        y=1.5 * window.height / 2,
                                                        anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
-                            label2 = pyglet.text.Label("L", font_name=SANS_SERIF, font_size=200,
+                            label2 = pyglet.text.Label("L", font_name=FONT, font_size=200,
                                                        x=window.width / 2,
                                                        y=window.height / 2,
                                                        anchor_x='center', anchor_y='center', color=(255, 0, 0, 255))
@@ -251,7 +262,7 @@ def on_mouse_press(x, y, buttons, modifiers):
                                     uncovered += 1
                             if len(grid) * (1 - DIFFICULTY) <= uncovered:
                                 LOG.info("Game won")
-                                label = pyglet.text.Label("W", font_name=SANS_SERIF, font_size=200,
+                                label = pyglet.text.Label("W", font_name=FONT, font_size=200,
                                                           x=window.width / 2,
                                                           y=window.height / 2,
                                                           anchor_x='center', anchor_y='center', color=(0, 255, 0, 255))
@@ -272,6 +283,9 @@ def on_key_press(symbol, modifiers):
     if symbol == key.R:
         reset()
         window.invalid = True
+    elif symbol == key.W and modifiers & key.MOD_COMMAND:
+        LOG.debug("Closing via hotkey")
+        window.close()
 
 
 @window.event
