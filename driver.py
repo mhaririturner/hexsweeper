@@ -21,7 +21,6 @@ from pyglet.window import mouse
 from pyglet.gl import glClearColor
 from datetime import datetime
 from hex_cell import HexCell
-import hex_cell
 
 FILE_CONFIG = "config.json"
 
@@ -41,6 +40,7 @@ GRID_SIZE = 5
 DIFFICULTY = 0.25
 FONT = pyglet.font.load(None, 16)
 COLOR_BLACK = (0, 0, 0, 255)
+# Determines specific window settings
 PROD_MODE = False
 
 # Global variables
@@ -73,7 +73,8 @@ def main():
     generate_mines(int(len(grid) * DIFFICULTY))
 
     # Tell the mines to love thy neighbor
-    hex_cell.generate_neighbor_numbers(grid)
+    for cell in grid:
+        cell.assess_neighbors(grid)
 
     # Set icon
     window.set_icon(pyglet.image.load("resources/hex.png"))
@@ -186,11 +187,8 @@ def on_draw():
         label = cell.get_label()
         if label is not None:
             cell.render(HEX_SCALE, window.width, window.height)
-            #label.draw()
-
         if cell.is_flagged():
             flag_count += 1
-
     # Display any context-specific labels
     for drawable in draw:
         drawable.draw()
@@ -276,7 +274,6 @@ def on_mouse_press(x, y, buttons, modifiers):
                             options.remove(options[target])
                         for refresh in grid:
                             refresh.assess_neighbors(grid)
-                    # hex_cell.generate_neighbor_numbers(grid)
                     first_move = False
                     if cell.mine():
                         LOG.info("Game lost")
@@ -294,11 +291,11 @@ def on_mouse_press(x, y, buttons, modifiers):
                         draw.append(label2)
                         live = False
                     else:
-                        uncovered = 0
-                        for check_cell in grid:
-                            if not check_cell.alive():
-                                uncovered += 1
-                        if len(grid) * (1 - DIFFICULTY) <= uncovered:
+                        swept = 0
+                        for c in grid:
+                            if not c.alive():
+                                swept += 1
+                        if len(grid) * (1 - DIFFICULTY) <= swept:
                             LOG.info("Game won")
                             label = pyglet.text.Label("W", font_name=FONT, font_size=200,
                                                       x=window.width / 2,
@@ -350,8 +347,8 @@ def reset():
     live = True
     generate_hexagonal_grid(GRID_SIZE)
     generate_mines(int(len(grid) * DIFFICULTY))
-    hex_cell.generate_neighbor_numbers(grid)
     for cell in grid:
+        cell.assess_neighbors(grid)
         cell.render(HEX_SCALE, window.width, window.height)
 
 

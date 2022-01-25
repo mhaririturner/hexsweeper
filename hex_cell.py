@@ -32,11 +32,6 @@ SANS_SERIF = pyglet.font.load(None, 16)
 FONT_SIZE = 16
 
 
-def generate_neighbor_numbers(grid):
-    for cell in grid:
-        cell.assess_neighbors(grid)
-
-
 class HexCell(object):
     def __init__(self, major, minor):
         self.h = major
