@@ -1,3 +1,14 @@
 # hexsweeper
+
+# Information
+This game is a "clone" of minesweeper, using hexagonal cells instead of square cells. I created as a proof of concept because I was curious if such a game would be possible, and if so would it be interesting.
+
+# Gameplay
+Left click to "dig" a cell
+Right click to flag a cell
+"R" to reset the game
+Close the window to end the game
+
+# Instructions
 Run the quick start before first launch
 Use "./gohex.sh" to run
