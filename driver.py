@@ -252,7 +252,7 @@ def on_mouse_press(x, y, buttons, modifiers):
             # Pythagorean theorem moment pog
             distance = math.sqrt((x - sprite.x) ** 2 + (y - sprite.y) ** 2)
             if distance < radius:
-                if buttons == mouse.LEFT and not modifiers & key.MOD_COMMAND:
+                if buttons == mouse.LEFT and not modifiers & key.MOD_ACCEL:
                     global first_move
                     if first_move and (cell.get_neighbor_number() != 0 or cell.get_mine()):
                         LOG.debug("Unacceptable first move, reconfiguring board")
@@ -312,7 +312,7 @@ def on_mouse_press(x, y, buttons, modifiers):
                             draw.append(backing)
                             draw.append(label)
                             live = False
-                elif buttons == mouse.RIGHT or (buttons == mouse.LEFT and modifiers & key.MOD_COMMAND):
+                elif buttons == mouse.RIGHT or (buttons == mouse.LEFT and modifiers & key.MOD_ACCEL):
                     cell.toggle_flag()
 
 
@@ -327,7 +327,7 @@ def on_key_press(symbol, modifiers):
     if symbol == key.R:
         reset()
         window.invalid = True
-    elif symbol == key.W and modifiers & key.MOD_COMMAND:
+    elif symbol == key.W and modifiers & key.MOD_ACCEL:
         LOG.debug("Closing via hotkey")
         window.close()
 

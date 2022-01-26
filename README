@@ -8,7 +8,9 @@ would be possible, and if so would it be interesting.
 # Gameplay
 Left click to "dig" a cell
 Right click to flag a cell
+CTRL/CMD + left click to flag a cell
 "R" to reset the game
+CTRL/CMD + "W" to close the game
 Close the window to end the game
 
 # Instructions
